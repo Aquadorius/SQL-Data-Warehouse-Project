@@ -1,5 +1,58 @@
 /*
 ========================================================
+Data Warehouse Database Creation
+========================================================
+
+Overview
+--------
+This section ensures that a fresh database named 
+`DataWarehouse` is created for our ETL/ELT pipeline.  
+It is the central repository where all schemas (bronze, 
+silver, gold) are maintained.  
+
+What the Code Does
+------------------
+1. Switches context to the `master` database.  
+2. Drops the `DataWarehouse` database if it already exists, 
+   ensuring a clean environment for re-runs.  
+3. Creates a new `DataWarehouse` database.  
+4. Switches context to `DataWarehouse`.  
+5. Creates the core schemas:  
+   - **bronze** → Raw source data (CRM, ERP, etc.)  
+   - **silver** → Cleaned, transformed, standardized data  
+   - **gold**   → Business-ready curated data for reporting  
+========================================================
+*/
+
+USE master;
+GO
+
+-- Drop the database if it already exists
+IF DB_ID('DataWarehouse') IS NOT NULL
+BEGIN
+    DROP DATABASE DataWarehouse;
+END
+GO
+
+-- Create a new database
+CREATE DATABASE DataWarehouse;
+GO
+
+-- Switch context to the new database
+USE DataWarehouse;
+GO
+
+-- Separate batches when working with multiple SQL statements using GO
+CREATE SCHEMA bronze;
+GO
+CREATE SCHEMA silver;
+GO
+CREATE SCHEMA gold;
+GO
+
+
+/*
+========================================================
 Bronze Layer Table Creation Script
 ========================================================
 
@@ -23,10 +76,6 @@ Source Systems Covered:
 
 Warnings
 --------
-- Data Type Choice:
-  - Use NVARCHAR for multilingual text data (non-English characters).
-  - Avoid using INT for date columns when actual dates are required. 
-    Instead, prefer DATE or DATETIME.
 - Drop Behavior:
   - Each table is dropped if it already exists (IF OBJECT_ID ... DROP TABLE). 
     This ensures fresh creation but will remove existing data.
