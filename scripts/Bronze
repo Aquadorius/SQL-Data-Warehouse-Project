@@ -84,12 +84,12 @@ prd_line NVARCHAR(50),
 prd_start_dt DATE,
 prd_end_dt DATE);
 
-IF OBJECT_ID('bronze.erp_cust_az_12','U') IS NOT NULL
+IF OBJECT_ID('bronze.erp_cust_az12','U') IS NOT NULL
     DROP TABLE bronze.erp_cust_az_12;
-CREATE TABLE bronze.erp_cust_az_12(
-	cid VARCHAR(50),
-	bdate DATE,
-	gen VARCHAR(10)
+CREATE TABLE bronze.erp_cust_az12(
+cid NVARCHAR(50),
+bdate DATE,
+gen NVARCHAR(10)
 );
 
 IF OBJECT_ID('bronze.erp_loc_a101','U') IS NOT NULL
