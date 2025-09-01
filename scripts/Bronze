@@ -73,17 +73,16 @@ CREATE TABLE bronze.crm_sales_details(
 	sls_price INT
 );
 
-IF OBJECT_ID('bronze.crm_prd_info','U') IS NOT NULL
-    DROP TABLE bronze.crm_prd_info;
+IF OBJECT_ID('bronze.crm_prd_info','U') is not null
+DROP TABLE bronze.crm_prd_info;
 CREATE TABLE bronze.crm_prd_info(
-	prd_id INT,
-	prd_key NVARCHAR(50),
-	prd_nm NVARCHAR(100),
-	prd_cost NVARCHAR,
-	prd_line NVARCHAR(20),
-	prd_start_dt DATE,
-	prd_end_dt DATE
-);
+prd_id INT,
+prd_key NVARCHAR(50),
+prd_nm NVARCHAR(50),
+prd_cost INT,
+prd_line NVARCHAR(50),
+prd_start_dt DATE,
+prd_end_dt DATE);
 
 IF OBJECT_ID('bronze.erp_cust_az_12','U') IS NOT NULL
     DROP TABLE bronze.erp_cust_az_12;
