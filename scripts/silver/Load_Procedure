@@ -39,6 +39,112 @@ cst_create_date)
 		)c
 
 ---------------------------------------------------------------
+/*
+========================================================
+SILVER LAYER ETL: bronze.crm_prd_info → silver.crm_prd_info
+========================================================
+Repository: sql-data-warehouse-production
+File: scripts/silver/load_silver_crm_prd_info.sql
 
+Purpose: Load cleaned and transformed product data into silver layer
+Business Rules Applied:
+- Extract category IDs for ERP system integration
+- Standardize product line codes to business terms  
+- Handle missing product costs (NULL → 0)
+- Generate proper date ranges using product versioning logic
+========================================================
+*/
+
+-- TABLE SCHEMA: Create silver table with enhanced structure
+IF OBJECT_ID('silver.crm_prd_info','U') IS NOT NULL
+BEGIN	
+    DROP TABLE silver.crm_prd_info;
+END;
+
+CREATE TABLE silver.crm_prd_info (
+    prd_id INT,                                    -- PRIMARY KEY: Product identifier
+    cat_id NVARCHAR(50),                          -- DERIVED COLUMN: Category ID for ERP joins (from prd_key)
+    sls_prd_key NVARCHAR(50),                     -- DERIVED COLUMN: Sales key for transaction joins (from prd_key)
+    prd_nm NVARCHAR(50),                          -- PRODUCT NAME: Product description
+    prd_cost INT,                                 -- PRODUCT COST: Unit cost (NULL values converted to 0)
+    prd_line NVARCHAR(50),                        -- PRODUCT LINE: Standardized category (M→Mountain, R→Road, etc.)
+    prd_start_dt DATE,                            -- EFFECTIVE START: When product version became active
+    prd_end_dt DATE,                              -- EFFECTIVE END: When product version ended (calculated)
+    dwh_create_date DATETIME2 DEFAULT GETDATE()   -- AUDIT COLUMN: ETL load timestamp
+);
+
+-- DATA RESET: Clear existing silver data for fresh load  
+IF OBJECT_ID('silver.crm_prd_info','U') IS NOT NULL
+    TRUNCATE TABLE silver.crm_prd_info;
+
+-- MAIN ETL TRANSFORMATION: Load cleaned data with business logic applied
+INSERT INTO silver.crm_prd_info(
+    prd_id,
+    cat_id,
+    sls_prd_key, 
+    prd_nm,
+    prd_cost,
+    prd_line,
+    prd_start_dt,
+    prd_end_dt
+)
+SELECT
+    prd_id,                                                                      -- PRIMARY KEY: Keep original
+    
+    -- CATEGORY ID EXTRACTION: Parse first 5 characters and format for ERP system
+    REPLACE(SUBSTRING(TRIM(prd_key),1,5),'-','_') AS cat_id,                    -- "AC-BR" becomes "AC_BR"
+    
+    -- SALES KEY EXTRACTION: Extract remaining portion for sales transaction joins
+    SUBSTRING(TRIM(prd_key),7,LEN(prd_key)) AS sls_prd_key,                     -- Extract from position 7 onward
+    
+    prd_nm,                                                                      -- PRODUCT NAME: No transformation needed
+    
+    -- MISSING VALUE HANDLING: Business rule for NULL costs
+    COALESCE(prd_cost,0) AS prd_cost,                                           -- NULL cost becomes 0
+    
+    -- PRODUCT LINE STANDARDIZATION: Convert codes to business-friendly terms
+    CASE 
+        WHEN UPPER(TRIM(prd_line))='M' THEN 'Mountain'                          -- M → Mountain bikes
+        WHEN UPPER(TRIM(prd_line))='R' THEN 'Road'                              -- R → Road bikes  
+        WHEN UPPER(TRIM(prd_line))='S' THEN 'Other Sales'                       -- S → Other sales items
+        WHEN UPPER(TRIM(prd_line))='T' THEN 'Touring'                           -- T → Touring bikes
+        ELSE 'n/a'                                                              -- Unknown codes
+    END AS prd_line,
+    
+    prd_start_dt,                                                               -- START DATE: Keep original
+    
+    -- END DATE CALCULATION: Create continuous date ranges for product versions
+    LEAD(DATEADD(DAY,-1,prd_start_dt)) OVER(
+        PARTITION BY prd_key                                                    -- GROUP BY: Same product key (different versions)
+        ORDER BY prd_start_dt                                                   -- ORDER BY: Chronological sequence
+    ) AS prd_end_dt                                                             -- RESULT: End date = next version start - 1 day
+
+FROM bronze.crm_prd_info 
+ORDER BY prd_id;
+
+-- LOAD VERIFICATION: Display final results
+SELECT * FROM silver.crm_prd_info;
+
+/*
+========================================================
+TRANSFORMATION SUMMARY:
+========================================================
+
+Input Source: bronze.crm_prd_info
+Output Target: silver.crm_prd_info
+
+Key Transformations Applied:
+1. CATEGORY EXTRACTION: prd_key → cat_id (first 5 chars, dash to underscore)
+2. SALES KEY EXTRACTION: prd_key → sls_prd_key (remaining portion)  
+3. COST STANDARDIZATION: NULL → 0 (business rule)
+4. PRODUCT LINE MAPPING: Single letters → descriptive terms
+5. DATE RANGE CONSTRUCTION: Calculate end dates using LEAD function
+
+Business Benefits:
+- Enables joins with ERP category data (cat_id)
+- Enables joins with sales transaction data (sls_prd_key)
+- Provides clean, business-ready product information
+- Creates proper effective date ranges for historical analysis
+========================================================
 
 
