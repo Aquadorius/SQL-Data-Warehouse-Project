@@ -1,3 +1,150 @@
+/*
+========================================================
+SILVER LAYER ETL PROCEDURE: Complete Data Transformation Pipeline
+========================================================
+
+Stored Procedure: silver.load_silver
+Database: DataWarehouse
+Schema: silver
+File: scripts/silver/load_silver_procedure.sql
+
+Purpose
+-------
+This stored procedure orchestrates the complete ETL pipeline from bronze 
+to silver layer, transforming raw source data into cleaned, standardized, 
+and business-ready format. It processes data from both CRM and ERP systems 
+with comprehensive data quality improvements and business rule applications.
+
+Tables Processed
+----------------
+CRM System Tables:
+- bronze.crm_cust_info     → silver.crm_cust_info     (Customer master data)
+- bronze.crm_prd_info      → silver.crm_prd_info      (Product information)
+- bronze.crm_sales_details → silver.crm_sales_details (Sales transactions)
+
+ERP System Tables:
+- bronze.erp_cust_az12     → silver.erp_cust_az12     (Additional customer attributes)
+- bronze.erp_loc_a101      → silver.erp_loc_a101      (Customer location data)
+- bronze.erp_px_cat_g1v2   → silver.erp_px_cat_g1v2   (Product category mapping)
+
+Key Transformations Applied
+---------------------------
+✅ Data Standardization: Convert codes to business-friendly terms
+✅ Data Cleansing: Remove leading/trailing spaces, handle NULLs
+✅ Duplicate Removal: Eliminate duplicate records using ROW_NUMBER()
+✅ Date Conversions: Transform integer dates to proper DATE format
+✅ Business Rule Validation: Ensure data consistency and accuracy
+✅ Key Derivation: Extract category IDs and sales keys for joins
+✅ Missing Value Handling: Apply default values per business rules
+
+Performance Features
+--------------------
+• Batch processing with timing metrics for each table
+• Structured error handling with detailed error reporting
+• Progress monitoring with PRINT statements
+• Transaction safety with TRY-CATCH blocks
+
+Warnings & Important Notes
+--------------------------
+⚠️  DATA OVERWRITE WARNING:
+    - This procedure uses TRUNCATE TABLE operations
+    - ALL existing data in silver layer tables will be PERMANENTLY DELETED
+    - Ensure bronze layer is populated before execution
+
+⚠️  SCHEMA DEPENDENCIES:
+    - Requires bronze schema tables to be pre-populated
+    - silver schema tables will be recreated (silver.crm_sales_details)
+    - Default constraints on dwh_create_date columns must exist
+
+⚠️  EXECUTION REQUIREMENTS:
+    - Must be executed in DataWarehouse database context
+    - Requires sufficient permissions for DDL operations (DROP, CREATE, TRUNCATE)
+    - Bronze layer must contain valid data before running
+
+⚠️  KNOWN ISSUES:
+    - silver.crm_sales_details table is DROPPED and RECREATED (not just truncated)
+    - Error message shows "BRONZE LAYER" but should reference "SILVER LAYER"
+    - Some timing variables may not be properly initialized
+
+Business Rules Implemented
+---------------------------
+Customer Data:
+- Marital status codes: M → Married, S → Single, Other → n/a
+- Gender codes: M → Male, F → Female, Other → n/a
+- Duplicate handling: Keep most recent record per customer
+
+Product Data:
+- Product line codes: M → Mountain, R → Road, S → Other Sales, T → Touring
+- NULL cost handling: Replace with 0
+- Date range construction: Calculate end dates using LEAD function
+- Key parsing: Extract category ID and sales key from product key
+
+Sales Data:
+- Date format validation: Ensure 8-digit format before conversion
+- Sales amount validation: Recalculate if inconsistent with quantity × price
+- Price derivation: Back-calculate unit price from total when missing
+
+ERP Data:
+- ID normalization: Remove "NAS" prefixes, strip hyphens
+- Birthdate validation: Set future dates to NULL
+- Country standardization: Normalize USA/US/United States variations
+- Gender standardization: Apply consistent Male/Female/n/a format
+
+Execution Example
+-----------------
+-- Execute the complete silver layer ETL
+EXEC silver.load_silver;
+
+-- Monitor execution progress through PRINT statements in Messages tab
+-- Check final timing summary at completion
+
+Expected Output
+---------------
+The procedure will display:
+- Start/end timestamps for each table load
+- Load duration in seconds for each transformation
+- Total batch execution time
+- Error details if any issues occur
+
+Dependencies
+------------
+Prerequisites:
+- bronze.load_bronze must be executed first
+- All bronze tables must contain data
+- silver schema must exist
+
+Post-execution:
+- Data ready for gold layer star schema creation
+- Enables analytical queries on cleaned data
+- Supports dimensional modeling requirements
+
+Support & Troubleshooting
+--------------------------
+For issues during execution:
+1. Check bronze layer data completeness
+2. Verify database permissions
+3. Review error messages in CATCH block
+4. Validate table schemas match expectations
+
+Last Updated: [Date]
+Version: 1.0
+Maintained by: Data Engineering Team
+========================================================
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 CREATE OR ALTER PROCEDURE silver.load_silver AS
 BEGIN
