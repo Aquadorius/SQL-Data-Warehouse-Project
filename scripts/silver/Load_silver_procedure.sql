@@ -133,19 +133,6 @@ Maintained by: Data Engineering Team
 */
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 CREATE OR ALTER PROCEDURE silver.load_silver AS
 BEGIN
 	DECLARE @start_time DATETIME2, @end_time DATETIME2, @batch_start_time DATETIME2, @batch_end_time DATETIME2
@@ -202,10 +189,27 @@ BEGIN
 			SET @end_time=GETDATE();
 			PRINT('Load Duration:'+CAST(DATEDIFF(SECOND,@start_time,@end_time) AS NVARCHAR)+'seconds');
 		
-
+		
 		PRINT('===================================');
 		PRINT('INSERTING TRANSFORMED CLEANED DATA INTO silver.crm_prd_info');
 		SET @start_time=GETDATE();
+		IF OBJECT_ID('silver.crm_prd_info','U') IS NOT NULL
+		BEGIN	
+			DROP TABLE silver.crm_prd_info;
+		END;
+		
+
+		CREATE TABLE silver.crm_prd_info (
+			prd_id INT,                                    -- PRIMARY KEY: Product identifier
+			cat_id NVARCHAR(50),                          -- DERIVED COLUMN: Category ID for ERP joins (from prd_key)
+			sls_prd_key NVARCHAR(50),                     -- DERIVED COLUMN: Sales key for transaction joins (from prd_key)
+			prd_nm NVARCHAR(50),                          -- PRODUCT NAME: Product description
+			prd_cost INT,                                 -- PRODUCT COST: Unit cost (NULL values converted to 0)
+			prd_line NVARCHAR(50),                        -- PRODUCT LINE: Standardized category (M→Mountain, R→Road, etc.)
+			prd_start_dt DATE,                            -- EFFECTIVE START: When product version became active
+			prd_end_dt DATE,                              -- EFFECTIVE END: When product version ended (calculated)
+			dwh_create_date DATETIME2 DEFAULT GETDATE()   -- AUDIT COLUMN: ETL load timestamp
+		);
 		PRINT('TRUNCATING TABLE: silver.crm_prd_info');
 		IF OBJECT_ID('silver.crm_prd_info','U') IS NOT NULL
 			TRUNCATE TABLE silver.crm_prd_info;
@@ -240,6 +244,8 @@ BEGIN
 		PRINT('Load Duration:'+CAST(DATEDIFF(SECOND,@start_time,@end_time) AS NVARCHAR)+'seconds');
 		PRINT('=====================================');
 
+		
+
 		/*===================================
 		LOADING CLEANED DATA INTO silver.crm_sales_details
 		=====================================*/
@@ -271,7 +277,7 @@ BEGIN
 		BEGIN TRUNCATE TABLE silver.crm_sales_details
 		END;
 		PRINT('INSERTING DATA INTO TABLE: silver.crm_sales_details');
-
+		
 		INSERT INTO  silver.crm_sales_details(	
 			sls_ord_num ,
 			sls_prd_key ,
@@ -308,6 +314,7 @@ BEGIN
 			SET @end_time=GETDATE();
 			PRINT('Load Duration:'+CAST(DATEDIFF(SECOND,@start_time,@end_time) AS NVARCHAR)+'seconds');
 			PRINT('================================================');
+		
 
 		/*===================================
 		INSERTING TRANSFORMED CLEANED DATA INTO silver.erp_cust_az12
@@ -415,6 +422,19 @@ SET @batch_end_time=GETDATE();
 PRINT('=======================================')
 PRINT('TOTAL LOADING TIME FOR SILVER LAYER: '+CAST(DATEDIFF(SECOND,@batch_start_time,@batch_end_time)AS NVARCHAR)+'seconds')
 PRINT('=======================================')
-END
+END;
 
 EXEC silver.load_silver
+
+
+
+
+
+
+
+
+
+
+
+
+
