@@ -23,32 +23,51 @@ What the Code Does
    - **gold**   → Business-ready curated data for reporting  
 ========================================================
 */
-
-USE master;
-GO
-
--- Drop the database if it already exists
-IF DB_ID('DataWarehouse') IS NOT NULL
+-- Check if database exists and drop it
+IF EXISTS (SELECT name FROM sys.databases WHERE name = 'DataWarehouse')
 BEGIN
+    PRINT ('Database DataWarehouse found. Proceeding to drop...');
+    
+    -- Step 1: Set database to single user mode to disconnect all users
+    ALTER DATABASE DataWarehouse SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    PRINT ('Database set to single user mode.');
+    
+    -- Step 2: Drop the database
     DROP DATABASE DataWarehouse;
+    PRINT ('Database DataWarehouse dropped successfully.');
+END
+ELSE
+BEGIN
+    PRINT ('Database DataWarehouse does not exist.');
 END
 GO
-
--- Create a new database
+-- Step 3: Create the database
 CREATE DATABASE DataWarehouse;
 GO
+PRINT ('Database DataWarehouse created successfully.');
 
--- Switch context to the new database
+-- Step 4: Switch to the new database
 USE DataWarehouse;
 GO
-
--- Separate batches when working with multiple SQL statements using GO
+-- Step 5: Create schemas
 CREATE SCHEMA bronze;
+GO
+PRINT ('Schema bronze created successfully.');
+
 GO
 CREATE SCHEMA silver;
 GO
+PRINT ('Schema silver created successfully.');
+GO
 CREATE SCHEMA gold;
 GO
+PRINT ('Schema gold created successfully.');
+GO
+PRINT( '========================================');
+PRINT ('Database and schemas setup completed successfully!');
+PRINT ('Ready for table creation and data loading.');
+PRINT ('========================================');
+
 
 
 /*
