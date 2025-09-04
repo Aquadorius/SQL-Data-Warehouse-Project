@@ -327,8 +327,8 @@ BEGIN
 		
 		SET @start_time=GETDATE()
 		PRINT('>>TRUNCATING TABLE: silver.erp_cust_az12');
-		IF OBJECT_ID('>>silver.erp_cust_az12','U') IS NOT NULL
-		BEGIN TRUNCATE TABLE silver.erp_cust_az12
+		IF OBJECT_ID('silver.erp_cust_az12','U') IS NOT NULL
+		BEGIN TRUNCATE TABLE silver.erp_cust_az12;
 		END;
 		PRINT('>>INSERTING DATA INTO TABLE: silver.erp_cust_az12');
 		INSERT INTO silver.erp_cust_az12(
@@ -425,16 +425,3 @@ PRINT('=======================================')
 END;
 
 EXEC silver.load_silver
-
-
-
-
-
-
-
-
-
-
-
-
-
