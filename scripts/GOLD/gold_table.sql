@@ -1,3 +1,23 @@
+/***************************************************************************************************
+    NOTE FOR USERS:
+
+    This script builds the Gold layer tables (dim_customers, dim_products, fact_sales) 
+    from Silver layer sources. 
+
+    ⚠️ Performance Consideration:
+    - If your environment has limited processing power or constrained resources, 
+      it is generally more efficient to source directly from the underlying tables 
+      rather than querying views. 
+    - Views can add overhead because they are essentially stored queries that must 
+      be resolved at runtime, which may slow down large ETL jobs.
+
+    Recommendation:
+    - Use base tables wherever possible to minimize execution time.
+    - Reserve views for abstraction, security, or readability only when system 
+      capacity comfortably allows it.
+***************************************************************************************************/
+
+
 IF OBJECT_ID('gold.dim_customers','U') is not null
 	DROP TABLE gold.dim_customers;
 	GO
